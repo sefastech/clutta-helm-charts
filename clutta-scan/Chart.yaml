@@ -1,0 +1,13 @@
+apiVersion: v2
+name: clutta-scan
+description: Clutta scan daemon. Runs on every node, watches logs and k8s state, fires findings to the Clutta backend.
+type: application
+# version: chart-internal SemVer. Bump on chart shape changes (templates,
+# values structure), not on every binary version. Engineers see this
+# only in `helm list`; the binary they actually run is appVersion.
+version: 0.1.2
+# appVersion: the clutta CLI version baked into the image. Must match a
+# tag that release-clutta-scan-image.yml has pushed to Docker Hub. Bump
+# this in lockstep with the clutta-incident-v* git tag, BEFORE tagging,
+# otherwise default-values `helm install` pulls a nonexistent image tag.
+appVersion: "v0.1.7"

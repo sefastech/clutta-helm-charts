@@ -1,0 +1,4 @@
+# Local helm working state. Never commit.
+*.tgz.tmp
+.helm/
+helm-cache/

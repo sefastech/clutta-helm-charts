@@ -1,0 +1,132 @@
+# Default values for the clutta-scan DaemonSet.
+
+image:
+  # Published by the release-clutta-scan-image.yml workflow on every
+  # clutta-incident-v* tag. Public on Docker Hub --- no imagePullSecret
+  # required. Override `repository` if you mirror the image to a private
+  # registry; override `tag` to pin a specific version (otherwise the
+  # chart's appVersion is used).
+  repository: sefastech/clutta-scan
+  tag: ""  # defaults to .Chart.appVersion when empty
+  pullPolicy: IfNotPresent
+  pullSecret: ""  # name of an existing imagePullSecret; leave empty for public images
+
+# Credentials. The chart expects an existing Secret with key
+# `auth.json` containing the JSON document produced by `clutta login`:
+#   {"api_key":"...","backend_url":"https://api.clutta.io"}
+# Create it from a file you generate locally:
+#   clutta login
+#   kubectl create secret generic clutta-scan-credentials \
+#     --from-file=auth.json=$HOME/.clutta/auth.json
+credentials:
+  existingSecretName: clutta-scan-credentials
+  authJsonKey: auth.json
+
+# scan.yaml mounted at /etc/clutta/scan.yaml. The DaemonSet passes
+# --config=/etc/clutta/scan.yaml so this content drives runtime
+# behaviour. Edit in place to tune exclusions, triggers, cost caps.
+scanConfig: |
+  exclude:
+    namespaces:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+  catchup:
+    window: 1h
+  diagnose:
+    # Fresh installs start in dry-run so operators can verify trigger
+    # configuration before any credit is consumed. Flip to false to
+    # enable live tier-4 dispatch.
+    dry_run: true
+    severity_signals:
+      - oom_kill
+      - kernel_panic
+      - segfault
+      - data_loss
+      - data_corruption
+      - disk_full
+      - unauthorized_access
+      - service_unavailable_global
+      - deployment_failed
+    frequency:
+      enabled: true
+      z_score_threshold: 3.0
+      baseline_window: 168h
+      min_baseline_samples: 100
+    co_occurrence:
+      enabled: true
+      min_distinct_signals: 3
+      window: 5m
+    novelty:
+      enabled: true
+      lookback: 24h
+      daily_cap: 50
+    cost:
+      max_invocations_per_day: 100
+      max_credits_per_day: 50
+      on_cap_exceeded: skip
+  cloud:
+    sync: true
+  limits:
+    max_file_size_mi: 100
+
+# RBAC: scan reads pods + events cluster-wide via kubectl. Set
+# rbac.create=false if your cluster manages RBAC out-of-band.
+rbac:
+  create: true
+
+# DaemonSet pod spec knobs.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# tolerations let scan run on every node including control-plane.
+# Comment out the master toleration to keep scan off control-plane.
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+
+nodeSelector: {}
+affinity: {}
+
+# hostPath mount for node-local logs. The default /var/log covers
+# typical k8s nodes; some clusters use /var/log/containers exclusively.
+hostLogPath: /var/log
+
+# Binary-level environment variables the clutta CLI honours. The
+# backend URL is intentionally NOT exposed here: it comes from the
+# credentials Secret (the auth.json a user generated with `clutta
+# login`) and the api gateway routes every clutta-scan endpoint
+# uniformly under /v1/incident/*. One URL, one source of truth.
+env:
+  # CLUTTA_MAX_INPUT_BYTES: per-source byte cap on each scan cycle's
+  # input. Default in the binary is 250 MB. Increase on clusters with
+  # high-volume pod logs; decrease on memory-constrained nodes.
+  maxInputBytes: ""  # e.g. "536870912" for 512 MB
+
+  # CLUTTA_NO_TELEMETRY: opt out of the single anonymous first-run
+  # event. Set to true in air-gapped or compliance-restricted
+  # environments. The daemon never sends payload content; this only
+  # toggles the install-fingerprint ping.
+  disableTelemetry: false
+
+# extraEnv lets operators add arbitrary env vars not yet wrapped above
+# (e.g. HTTPS_PROXY in restricted-egress clusters, or future CLUTTA_*
+# knobs added in newer binaries). Each entry is rendered verbatim under
+# the container's env list. Pass Secret references via valueFrom.
+extraEnv: []
+  # - name: HTTPS_PROXY
+  #   value: http://proxy.internal:8080
+  # - name: ANTHROPIC_API_KEY
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: clutta-scan-llm-fallback
+  #       key: api-key

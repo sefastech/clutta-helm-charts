@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "clutta-scan.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "clutta-scan.selectorLabels" . | nindent 6 }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        {{- include "clutta-scan.labels" . | nindent 8 }}
+      annotations:
+        # Roll the DaemonSet when scan.yaml changes.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- if .Values.rbac.create }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
+      {{- with .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        # Copy the credentials Secret into the state volume so the scan
+        # daemon finds auth.json at $HOME/.clutta/auth.json without us
+        # having to overlay a Secret mount on top of the state emptyDir.
+        - name: bootstrap-credentials
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /state/.clutta
+              cp /credentials/{{ .Values.credentials.authJsonKey }} /state/.clutta/auth.json
+              chmod 0600 /state/.clutta/auth.json
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+            - name: clutta-state
+              mountPath: /state
+      containers:
+        - name: scan
+          image: "{{ .Values.image.repository }}:{{ include "clutta-scan.imageTag" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - scan
+            - start
+            - --foreground
+            - --config
+            - /etc/clutta/scan.yaml
+          env:
+            - name: HOME
+              value: /var/clutta
+            {{- if .Values.env.maxInputBytes }}
+            - name: CLUTTA_MAX_INPUT_BYTES
+              value: {{ .Values.env.maxInputBytes | quote }}
+            {{- end }}
+            {{- if .Values.env.disableTelemetry }}
+            - name: CLUTTA_NO_TELEMETRY
+              value: "1"
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: host-logs
+              mountPath: /var/log
+              readOnly: true
+            - name: scan-config
+              mountPath: /etc/clutta/scan.yaml
+              subPath: scan.yaml
+              readOnly: true
+            - name: clutta-state
+              mountPath: /var/clutta
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: host-logs
+          hostPath:
+            path: {{ .Values.hostLogPath | quote }}
+            type: DirectoryOrCreate
+        - name: scan-config
+          configMap:
+            name: {{ .Release.Name }}-config
+        - name: credentials
+          secret:
+            secretName: {{ .Values.credentials.existingSecretName }}
+        - name: clutta-state
+          emptyDir: {}
