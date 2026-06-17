@@ -1,14 +1,17 @@
 # Default values for the clutta-scan DaemonSet.
 
 image:
-  # Published by the release-clutta-scan-image.yml workflow on every
-  # clutta-incident-v* tag. Public on Docker Hub --- no imagePullSecret
-  # required. Override `repository` if you mirror the image to a private
-  # registry; override `tag` to pin a specific version (otherwise the
-  # chart's appVersion is used).
+  # Published by the release workflow on every clutta-incident-v* tag.
+  # Public on Docker Hub, no imagePullSecret required. Override
+  # `repository` if you mirror to a private registry; override `tag` to
+  # pin a specific version (otherwise the chart's appVersion is used).
   repository: sefastech/clutta-scan
-  tag: ""  # defaults to .Chart.appVersion when empty
-  pullPolicy: IfNotPresent
+  tag: ""  # defaults to .Chart.appVersion when empty (recommended)
+  # pullPolicy: leave empty for the chart's smart default. The template
+  # picks IfNotPresent for pinned semver tags (immutable, cheap pulls)
+  # and Always for `:latest` (mutable, must re-pull every restart).
+  # Set explicitly (Always / IfNotPresent / Never) to override.
+  pullPolicy: ""
   pullSecret: ""  # name of an existing imagePullSecret; leave empty for public images
 
 # Credentials. The chart expects an existing Secret with key

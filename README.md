@@ -85,6 +85,12 @@ git push origin HEAD
 
 GitHub Pages serves `index.yaml` from the repo root within about a minute of the push. Using `HEAD` in the push avoids the assumption that your local branch is named `main`. If the remote is empty and you need to set the default branch name explicitly, run `git branch -M main` before the first push.
 
+## Pinning the image
+
+The chart defaults to `image.tag=""`, which resolves to the chart's `appVersion` (a pinned `vX.Y.Z`). That's the safe default: every release ships an immutable tag, the pull policy defaults to `IfNotPresent`, and your nodes cache the right thing.
+
+Avoid `--set image.tag=latest` in production. `latest` is a mutable tag — each release overwrites its content — and a node that already pulled `:latest` once will silently keep running the old image under `IfNotPresent`. The chart's pullPolicy helper automatically switches to `Always` if you set `tag=latest`, but the right move is to pin a real version anyway. Use `latest` only for short-lived dev clusters where you intentionally want the freshest binary.
+
 ## Versioning
 
 Two version numbers per chart:

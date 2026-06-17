@@ -39,29 +39,10 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      initContainers:
-        # Copy the credentials Secret into the state volume so the scan
-        # daemon finds auth.json at $HOME/.clutta/auth.json without us
-        # having to overlay a Secret mount on top of the state emptyDir.
-        - name: bootstrap-credentials
-          image: busybox:1.36
-          command:
-            - sh
-            - -c
-            - |
-              mkdir -p /state/.clutta
-              cp /credentials/{{ .Values.credentials.authJsonKey }} /state/.clutta/auth.json
-              chmod 0600 /state/.clutta/auth.json
-          volumeMounts:
-            - name: credentials
-              mountPath: /credentials
-              readOnly: true
-            - name: clutta-state
-              mountPath: /state
       containers:
         - name: scan
           image: "{{ .Values.image.repository }}:{{ include "clutta-scan.imageTag" . }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ include "clutta-scan.imagePullPolicy" . }}
           args:
             - scan
             - start
@@ -69,6 +50,14 @@ spec:
             - --config
             - /etc/clutta/scan.yaml
           env:
+            # CLUTTA_AUTH_PATH points the daemon's credential chain at the
+            # mounted Secret directly. No bootstrap initContainer, no
+            # emptyDir handoff, no HOME gymnastics: the file the Secret
+            # exposes IS the file the daemon reads. The chain still falls
+            # through to $HOME if this env var is unset, so the same image
+            # works locally.
+            - name: CLUTTA_AUTH_PATH
+              value: /etc/clutta/auth.json
             - name: HOME
               value: /var/clutta
             {{- if .Values.env.maxInputBytes }}
@@ -89,6 +78,10 @@ spec:
             - name: scan-config
               mountPath: /etc/clutta/scan.yaml
               subPath: scan.yaml
+              readOnly: true
+            - name: credentials
+              mountPath: /etc/clutta/auth.json
+              subPath: {{ .Values.credentials.authJsonKey }}
               readOnly: true
             - name: clutta-state
               mountPath: /var/clutta
