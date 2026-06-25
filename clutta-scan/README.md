@@ -44,12 +44,26 @@ Common tweaks:
 | Source        | How                                                                      |
 |---------------|--------------------------------------------------------------------------|
 | Filesystem    | `hostPath` mount of `/var/log` (default), read by the file provider      |
-| Kubernetes    | `kubectl get pods/events` against the cluster API via the ServiceAccount |
+| Kubernetes    | Kubernetes API (namespaces, pods, events) via the ServiceAccount, using client-go in-process |
 | systemd-journal | Not available inside the container; gracefully skipped                 |
 
 ## RBAC
 
 The chart creates a `ClusterRole` with `get + list` on `pods`, `events`, and `namespaces` cluster-wide. Set `rbac.create=false` if your cluster manages RBAC out-of-band.
+
+## Coverage
+
+Per-pod coverage (how many sources each scan instance is actually subscribed to vs how many failed silently) appears in the daemon log on every transition (`coverage: N/M source(s) running`) and in `clutta scan status`. A WARN line names the failure when a source drops.
+
+Cluster-wide coverage (how many nodes are running scan vs how many should be) is an operator-side check. A single pod cannot know about its siblings:
+
+```bash
+# pods vs nodes — should match for a healthy DaemonSet roll-out.
+kubectl -n clutta get pods -l app.kubernetes.io/name=clutta-scan -o wide
+kubectl get nodes
+```
+
+If the pod count is lower than the schedulable node count, a node is unreachable, tainted in a way the DaemonSet auto-tolerations don't cover, or hitting a scheduling constraint.
 
 ## State persistence
 

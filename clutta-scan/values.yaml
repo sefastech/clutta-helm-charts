@@ -73,7 +73,8 @@ scanConfig: |
   limits:
     max_file_size_mi: 100
 
-# RBAC: scan reads pods + events cluster-wide via kubectl. Set
+# RBAC: scan reads namespaces, pods, and events cluster-wide via the
+# Kubernetes API (client-go in-process, no kubectl in the image). Set
 # rbac.create=false if your cluster manages RBAC out-of-band.
 rbac:
   create: true
@@ -89,6 +90,11 @@ resources:
 
 # tolerations let scan run on every node including control-plane.
 # Comment out the master toleration to keep scan off control-plane.
+# Note: the k8s DaemonSet controller auto-adds the standard
+# eviction-survivor tolerations (not-ready, unreachable, disk/memory/
+# pid-pressure, unschedulable) to every DaemonSet pod template;
+# they're not listed here because re-stating defaults adds noise
+# without changing behaviour.
 tolerations:
   - key: node-role.kubernetes.io/control-plane
     operator: Exists

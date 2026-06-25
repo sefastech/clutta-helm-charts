@@ -2,8 +2,19 @@ apiVersion: v1
 entries:
   clutta-scan:
   - apiVersion: v2
+    appVersion: v0.1.11
+    created: "2026-06-25T12:06:39.609784779Z"
+    description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
+      fires findings to the Clutta backend.
+    digest: f5d124092fbfd44447f3f06582f3c9d9ad695d5fb307df4de5a92971fe7ae9e3
+    name: clutta-scan
+    type: application
+    urls:
+    - https://sefastech.github.io/clutta-helm-charts/charts/clutta-scan-0.1.11.tgz
+    version: 0.1.11
+  - apiVersion: v2
     appVersion: v0.1.10
-    created: "2026-06-17T13:06:02.215179976+01:00"
+    created: "2026-06-25T12:06:39.609366969Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 674a16957979dab7c7a54ad6e970a9012f980be5cea49e594cf27b2327d590a6
@@ -12,4 +23,4 @@ entries:
     urls:
     - https://sefastech.github.io/clutta-helm-charts/charts/clutta-scan-0.1.10.tgz
     version: 0.1.10
-generated: "2026-06-17T13:06:02.214646375+01:00"
+generated: "2026-06-25T12:06:39.608743224Z"
