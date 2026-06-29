@@ -88,20 +88,31 @@ resources:
     cpu: 200m
     memory: 256Mi
 
-# tolerations let scan run on every node including control-plane.
-# Comment out the master toleration to keep scan off control-plane.
+# tolerations: empty by default, so scan runs on worker nodes only.
+# That is where application pods live, which is the signal scan exists
+# to find. Control-plane nodes run mostly kube-system pods (excluded in
+# scanConfig above), so landing there yields little and just spends a
+# pod slot. On managed clusters (EKS/GKE/AKS) the control plane is not
+# even schedulable, so this default matches reality there too.
+#
+# To ALSO cover control-plane nodes (self-managed/on-prem only, when you
+# want to diagnose control-plane health), uncomment the tolerations
+# below AND remove kube-system from scanConfig.exclude.namespaces so the
+# control-plane pods are actually analysed:
+#   tolerations:
+#     - key: node-role.kubernetes.io/control-plane
+#       operator: Exists
+#       effect: NoSchedule
+#     - key: node-role.kubernetes.io/master
+#       operator: Exists
+#       effect: NoSchedule
+#
 # Note: the k8s DaemonSet controller auto-adds the standard
 # eviction-survivor tolerations (not-ready, unreachable, disk/memory/
 # pid-pressure, unschedulable) to every DaemonSet pod template;
 # they're not listed here because re-stating defaults adds noise
 # without changing behaviour.
-tolerations:
-  - key: node-role.kubernetes.io/control-plane
-    operator: Exists
-    effect: NoSchedule
-  - key: node-role.kubernetes.io/master
-    operator: Exists
-    effect: NoSchedule
+tolerations: []
 
 nodeSelector: {}
 affinity: {}

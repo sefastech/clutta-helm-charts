@@ -60,6 +60,13 @@ spec:
               value: /etc/clutta/auth.json
             - name: HOME
               value: /var/clutta
+            # NODE_NAME scopes the k8s provider's pod queries to this node.
+            # Without it every DaemonSet pod lists the whole cluster's pods,
+            # so an N-node cluster produces N copies of every pod snapshot.
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             {{- if .Values.env.maxInputBytes }}
             - name: CLUTTA_MAX_INPUT_BYTES
               value: {{ .Values.env.maxInputBytes | quote }}
