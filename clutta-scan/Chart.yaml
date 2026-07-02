@@ -10,5 +10,5 @@ type: application
 #                (e.g. 0.1.10 packages binary v0.1.10) so the chart .tgz is
 #                immutable from helm's POV and never overwritten in-place
 #   appVersion = full tag, mirrors the Docker Hub image tag exactly
-version: 0.1.15
-appVersion: "v0.1.15"
+version: 0.1.16
+appVersion: "v0.1.16"

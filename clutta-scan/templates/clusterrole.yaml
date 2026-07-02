@@ -10,6 +10,13 @@ rules:
   - apiGroups: [""]
     resources: ["namespaces", "pods"]
     verbs: ["get", "list"]
+  # Subscribe (logs): read container log content via the pod-log
+  # subresource. This is what lets scan ingest logs through the API
+  # (runtime-agnostic, no host /var/log mount). Pods are node-scoped in
+  # code, so each DaemonSet pod only reads its own node's containers.
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
   # Subscribe: poll events cluster-wide.
   - apiGroups: [""]
     resources: ["events"]
