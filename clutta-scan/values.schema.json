@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Clutta Scan Helm values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "tag", "pullPolicy", "pullSecret"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "tag": {"type": "string"},
+        "pullPolicy": {"type": "string", "enum": ["", "Always", "IfNotPresent", "Never"]},
+        "pullSecret": {"type": "string"}
+      }
+    },
+    "credentials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["existingSecretName", "apiKeyKey", "authJsonKey"],
+      "properties": {
+        "existingSecretName": {"type": "string", "minLength": 1},
+        "apiKeyKey": {"type": "string", "minLength": 1},
+        "authJsonKey": {"type": "string", "minLength": 1}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectId", "namespaces"],
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "pattern": "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "namespaces": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["exclude"],
+          "properties": {
+            "exclude": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "hostLogs"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["kubernetes", "host", "auto"]},
+        "hostLogs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": {
+            "path": {"type": "string", "pattern": "^/"}
+          }
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["manual", "automatic"]}
+      }
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "backendUrl", "proxy"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["cloud", "local"]},
+        "backendUrl": {"type": "string", "pattern": "^https://[^\\s]+$"},
+        "proxy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["httpsProxy", "noProxy"],
+          "properties": {
+            "httpsProxy": {"type": "string"},
+            "noProxy": {"type": "string"}
+          }
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {"type": "boolean"}
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "hostPath"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "hostPath": {"type": "string", "pattern": "^/"}
+      }
+    },
+    "rbac": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["create", "serviceAccountName"],
+      "properties": {
+        "create": {"type": "boolean"},
+        "serviceAccountName": {"type": "string"}
+      }
+    },
+    "resources": {"type": "object"},
+    "podSecurityContext": {"type": "object"},
+    "containerSecurityContext": {"type": "object"},
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startup", "readiness", "liveness"],
+      "properties": {
+        "startup": {"$ref": "#/definitions/probe"},
+        "readiness": {"$ref": "#/definitions/probe"},
+        "liveness": {"$ref": "#/definitions/probe"}
+      }
+    },
+    "terminationGracePeriodSeconds": {"type": "integer", "minimum": 1},
+    "tolerations": {"type": "array", "items": {"type": "object"}},
+    "nodeSelector": {"type": "object", "additionalProperties": {"type": "string"}},
+    "affinity": {"type": "object"},
+    "extraEnv": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "value": {"type": ["string", "number", "boolean"]},
+          "valueFrom": {"type": "object"}
+        }
+      }
+    },
+    "scanConfig": {"type": "string"},
+    "hostLogPath": {"type": "string"},
+    "env": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxInputBytes", "disableTelemetry"],
+      "properties": {
+        "maxInputBytes": {"type": ["string", "integer"]},
+        "disableTelemetry": {"type": "boolean"}
+      }
+    }
+  },
+  "required": [
+    "image",
+    "credentials",
+    "scope",
+    "collection",
+    "analysis",
+    "connection",
+    "telemetry",
+    "persistence",
+    "rbac",
+    "resources",
+    "podSecurityContext",
+    "containerSecurityContext",
+    "probes",
+    "terminationGracePeriodSeconds",
+    "tolerations",
+    "nodeSelector",
+    "affinity",
+    "extraEnv",
+    "scanConfig",
+    "hostLogPath",
+    "env"
+  ],
+  "definitions": {
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "periodSeconds", "timeoutSeconds", "failureThreshold"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "periodSeconds": {"type": "integer", "minimum": 1},
+        "timeoutSeconds": {"type": "integer", "minimum": 1},
+        "failureThreshold": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

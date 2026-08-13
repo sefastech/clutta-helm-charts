@@ -1,6 +1,6 @@
 apiVersion: v2
 name: clutta-scan
-description: Clutta scan daemon. Runs on every node, watches logs and k8s state, fires findings to the Clutta backend.
+description: Clutta Scan for Kubernetes evidence collection and analysis.
 type: application
 # version + appVersion are managed by .github/workflows/release-clutta-incident.yml.
 # Both values get rewritten from the release tag on every clutta-incident-v*
@@ -10,5 +10,5 @@ type: application
 #                (e.g. 0.1.10 packages binary v0.1.10) so the chart .tgz is
 #                immutable from helm's POV and never overwritten in-place
 #   appVersion = full tag, mirrors the Docker Hub image tag exactly
-version: 0.1.23
-appVersion: "v0.1.23"
+version: 0.1.24
+appVersion: "v0.1.24"

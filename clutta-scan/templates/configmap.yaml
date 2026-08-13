@@ -6,4 +6,19 @@ metadata:
     {{- include "clutta-scan.labels" . | nindent 4 }}
 data:
   scan.yaml: |
+{{- if eq (include "clutta-scan.legacyConfig" .) "true" }}
 {{ .Values.scanConfig | indent 4 }}
+{{- else }}
+    version: 2
+    scope:
+      project_id: {{ .Values.scope.projectId | quote }}
+      namespaces:
+        exclude:
+{{ toYaml .Values.scope.namespaces.exclude | indent 10 }}
+    collection:
+      mode: {{ .Values.collection.mode }}
+    analysis:
+      mode: {{ .Values.analysis.mode }}
+    connection:
+      mode: {{ .Values.connection.mode }}
+{{- end }}

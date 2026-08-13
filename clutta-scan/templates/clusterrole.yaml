@@ -1,4 +1,4 @@
-{{- if .Values.rbac.create -}}
+{{- if and .Values.rbac.create (eq (include "clutta-scan.kubernetesEnabled" .) "true") -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -6,18 +6,14 @@ metadata:
   labels:
     {{- include "clutta-scan.labels" . | nindent 4 }}
 rules:
-  # Discovery + Snapshot: list namespaces, list pods cluster-wide.
+  # Read-only access used to discover workloads and collect their evidence.
   - apiGroups: [""]
     resources: ["namespaces", "pods"]
     verbs: ["get", "list"]
-  # Subscribe (logs): read container log content via the pod-log
-  # subresource. This is what lets scan ingest logs through the API
-  # (runtime-agnostic, no host /var/log mount). Pods are node-scoped in
-  # code, so each DaemonSet pod only reads its own node's containers.
+  # Each DaemonSet pod requests logs only for workloads on its own node.
   - apiGroups: [""]
     resources: ["pods/log"]
     verbs: ["get"]
-  # Subscribe: poll events cluster-wide.
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["get", "list"]

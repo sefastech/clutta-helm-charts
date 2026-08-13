@@ -1,104 +1,151 @@
-# Clutta Helm Charts
+# Clutta Scan
 
-Public Helm chart repository for Clutta.
+This chart deploys one Clutta Scan pod per Kubernetes node. The public
+configuration describes operator intent: where Clutta may collect evidence,
+whether Analyze may run automatically, and where results are sent. Detection
+policy and Clutta's internal vocabulary are managed by the product.
 
 ## Install
 
-```
-helm repo add clutta https://sefastech.github.io/clutta-helm-charts
-helm repo update
-helm search repo clutta
-```
+Create an installation key in Clutta, then store it in a Kubernetes Secret.
+Avoid mounting a developer's complete login file for new installations. The
+key identifies the workspace. The Scan configuration identifies the project.
 
-## Available charts
-
-### clutta-scan
-
-Continuous-mode Clutta daemon. Runs as a DaemonSet on every node in your cluster, watches pod logs and Kubernetes events, and ships pulse and candidate records to the Clutta backend.
-
-Prerequisites:
-
-1. Run `clutta login` on your laptop to generate `~/.clutta/auth.json`. The CLI is at https://clutta.io/install.
-2. Make sure the Clutta image for your chart's appVersion exists publicly on Docker Hub. Chart appVersion `vX.Y.Z` resolves to `sefastech/clutta-scan:vX.Y.Z`. If you tagged a release but the image workflow has not finished publishing yet, `helm install` will fail with `ImagePullBackOff`. Wait for the image push, then install.
-
-Install:
-
-```
+```bash
+kubectl create namespace clutta
 kubectl create secret generic clutta-scan-credentials \
-  --namespace clutta-scan \
-  --from-file=auth.json=$HOME/.clutta/auth.json \
-  --dry-run=client -o yaml | kubectl apply -f -
+  --namespace clutta \
+  --from-literal=api-key="$CLUTTA_API_KEY"
 
+helm repo add clutta https://raw.githubusercontent.com/sefastech/clutta-helm-charts/main
+helm repo update clutta
 helm install clutta-scan clutta/clutta-scan \
-  --namespace clutta-scan \
-  --create-namespace
+  --namespace clutta \
+  --set-string scope.projectId="$CLUTTA_PROJECT_ID"
+
+kubectl -n clutta rollout status daemonset/clutta-scan
+kubectl -n clutta logs -l app.kubernetes.io/name=clutta-scan --tail=50
 ```
 
-The Secret step is idempotent: re-running it updates the auth.json content in place rather than erroring on `AlreadyExists`. The chart's default `credentials.existingSecretName` is `clutta-scan-credentials`, which matches the Secret you just created, so no override flag is needed.
+If `scope.projectId` is empty, the installation appears in the workspace's
+default project. Catalog rejects a project ID from another workspace.
 
-Verify the daemon is running:
+## Public configuration
 
-```
-kubectl -n clutta-scan get pods -l app.kubernetes.io/name=clutta-scan
-kubectl -n clutta-scan logs -l app.kubernetes.io/name=clutta-scan -f
-```
+The chart renders a versioned `scan.yaml` contract:
 
-Full values reference and tuning options are in the chart's own README under `clutta-scan/README.md`.
-
-### Troubleshooting clutta-scan
-
-**Pod runs but daemon logs report no input sources.** The chart mounts the node's `/var/log` directory by default, which is where pod logs live on standard kubelet setups. Some clusters write pod logs elsewhere, depending on the container runtime and node layout. If your cluster uses containerd with custom paths or has pod logs at `/var/log/pods/` exclusively, override the mount path:
-
-```
-helm install clutta-scan clutta/clutta-scan \
-  --namespace clutta-scan \
-  --create-namespace \
-  --set hostLogPath=/var/log/pods
-```
-
-Verify the path on a node first with `ls /var/log/containers/` and `ls /var/log/pods/` from a debug pod or directly on the node.
-
-**`ImagePullBackOff` immediately after install.** The image referenced by the chart has not been published to Docker Hub yet, or the Docker Hub repo is private. Confirm visibility at https://hub.docker.com/r/sefastech/clutta-scan and that a tag matching the chart's `appVersion` exists.
-
-**`error: secret "clutta-scan-credentials" not found`.** The Secret creation step was skipped or used a different name. Re-run the kubectl create command, or override `credentials.existingSecretName` to match the Secret you actually created.
-
-## Repository layout
-
-```
-README.md           This file
-index.yaml          Helm catalogue, regenerated on every chart update
-clutta-scan/        Chart source (for review and local builds)
-charts/             Packaged chart .tgz files served by GitHub Pages
+```yaml
+version: 2
+scope:
+  project_id: 11111111-1111-4111-8111-111111111111
+  namespaces:
+    exclude:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+collection:
+  mode: kubernetes
+analysis:
+  mode: manual
+connection:
+  mode: cloud
 ```
 
-## Adding or updating a chart
+Use Helm values to change this contract. A `values.schema.json` file rejects
+unknown fields and invalid modes before installation.
 
-From the chart source directory, package it and regenerate the index:
+| Value | Default | Purpose |
+| --- | --- | --- |
+| `scope.projectId` | empty | Project that receives this installation; empty uses the workspace default |
+| `scope.namespaces.exclude` | Kubernetes system namespaces | Namespaces Clutta must not observe |
+| `collection.mode` | `kubernetes` | Evidence source: `kubernetes`, `host`, or `auto` |
+| `analysis.mode` | `manual` | `manual` records evidence; `automatic` may invoke Analyze |
+| `connection.mode` | `cloud` | `cloud` syncs evidence; `local` keeps the daemon offline |
+| `connection.backendUrl` | `https://api.clutta.io` | Clutta API URL for a cloud connection |
+| `telemetry.enabled` | `true` | Product telemetry switch |
+| `persistence.enabled` | `false` | Preserve node-local Scan state across pod replacement |
 
+Example:
+
+```bash
+helm upgrade --install clutta-scan clutta/clutta-scan \
+  --namespace clutta \
+  --set analysis.mode=automatic \
+  --set persistence.enabled=true
 ```
-helm package ./clutta-scan --destination charts/
-helm repo index . --url https://sefastech.github.io/clutta-helm-charts
-git add charts/ index.yaml
-git commit -m "Publish clutta-scan <version>"
-git push origin HEAD
+
+## Collection modes
+
+`kubernetes` is the default. It reads workload logs and state through the
+Kubernetes API and does not mount the node's `/var/log` directory.
+
+`host` reads `collection.hostLogs.path` and does not request Kubernetes API
+access. The directory is mounted read-only and must already exist.
+
+`auto` enables Kubernetes and host collection. Use it only when both sources
+are intentionally required or while migrating an older deployment.
+
+## Security model
+
+The default pod runs as uid/gid 65532 with no Linux capabilities, no privilege
+escalation, a read-only root filesystem, and the runtime-default seccomp
+profile. The Kubernetes mode creates read-only cluster RBAC for namespaces,
+pods, pod logs, and events. Host mode creates no Clutta ServiceAccount or RBAC
+objects.
+
+Set `rbac.create=false` only when equivalent access is managed separately, and
+set `rbac.serviceAccountName` when the access belongs to a non-default account.
+Credential values belong in the referenced Secret, never in `values.yaml` or
+`extraEnv` literals.
+
+## Persistent state
+
+State is ephemeral by default for upgrade compatibility. To preserve local
+queues, checkpoints, and installation identity across pod replacement, prepare
+the directory on every selected node:
+
+```bash
+sudo install -d -o 65532 -g 65532 -m 0700 /var/lib/clutta-scan
 ```
 
-GitHub Pages serves `index.yaml` from the repo root within about a minute of the push. Using `HEAD` in the push avoids the assumption that your local branch is named `main`. If the remote is empty and you need to set the default branch name explicitly, run `git branch -M main` before the first push.
+Then set:
 
-## Pinning the image
+```yaml
+persistence:
+  enabled: true
+  hostPath: /var/lib/clutta-scan
+```
 
-The chart defaults to `image.tag=""`, which resolves to the chart's `appVersion` (a pinned `vX.Y.Z`). That's the safe default: every release ships an immutable tag, the pull policy defaults to `IfNotPresent`, and your nodes cache the right thing.
+The chart uses `hostPath.type: Directory`, so a missing directory fails closed
+instead of creating a root-owned path that the non-root process cannot use.
 
-Avoid `--set image.tag=latest` in production. `latest` is a mutable tag — each release overwrites its content — and a node that already pulled `:latest` once will silently keep running the old image under `IfNotPresent`. The chart's pullPolicy helper automatically switches to `Always` if you set `tag=latest`, but the right move is to pin a real version anyway. Use `latest` only for short-lived dev clusters where you intentionally want the freshest binary.
+## Health and coverage
 
-## Versioning
+Startup and liveness probes verify that the daemon is publishing fresh state.
+The readiness probe additionally requires realtime phase and complete source
+coverage. Inspect rollout or source failures with:
 
-Two version numbers per chart:
+```bash
+kubectl -n clutta get pods -l app.kubernetes.io/name=clutta-scan
+kubectl -n clutta logs -l app.kubernetes.io/name=clutta-scan --tail=100
+```
 
-`version` (chart SemVer) bumps when the chart shape changes: template edits, values schema changes, RBAC changes. A chart user pinning to a version pins this.
+## Migrating an existing installation
 
-`appVersion` bumps when the underlying clutta binary version changes. It matches the image tag pushed to Docker Hub by the `release-clutta-scan-image` workflow in the main monorepo. Bump this in lockstep with the `clutta-incident-v*` git tag before tagging.
+Existing Secrets containing `auth.json` continue to work through
+`credentials.authJsonKey`. Replace them with project-bound `api-key` Secrets
+when practical.
 
-## Reporting issues
+The deprecated `scanConfig` value accepts an existing unversioned runtime file
+verbatim during migration:
 
-Charts mirror the upstream binary. Behaviour bugs go to the main repo. Chart packaging bugs (helm install fails, image pull errors, template rendering issues) belong here.
+```bash
+helm upgrade --install clutta-scan clutta/clutta-scan \
+  --namespace clutta \
+  --set-file scanConfig=./scan.yaml
+```
+
+When `scanConfig` is set, the chart preserves the previous Kubernetes and host
+collection behavior. Remove it after expressing the deployment with the typed
+values above. The compatibility field is scheduled for removal in the next
+major chart version.

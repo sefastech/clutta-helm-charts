@@ -1,85 +1,64 @@
-# Default values for the clutta-scan DaemonSet.
+# Customer-facing values for the Clutta Scan DaemonSet.
 
 image:
-  # Published by the release workflow on every clutta-incident-v* tag.
-  # Public on Docker Hub, no imagePullSecret required. Override
-  # `repository` if you mirror to a private registry; override `tag` to
-  # pin a specific version (otherwise the chart's appVersion is used).
   repository: sefastech/clutta-scan
-  tag: ""  # defaults to .Chart.appVersion when empty (recommended)
-  # pullPolicy: leave empty for the chart's smart default. The template
-  # picks IfNotPresent for pinned semver tags (immutable, cheap pulls)
-  # and Always for `:latest` (mutable, must re-pull every restart).
-  # Set explicitly (Always / IfNotPresent / Never) to override.
+  tag: ""
   pullPolicy: ""
-  pullSecret: ""  # name of an existing imagePullSecret; leave empty for public images
+  pullSecret: ""
 
-# Credentials. The chart expects an existing Secret with key
-# `auth.json` containing the JSON document produced by `clutta login`:
-#   {"api_key":"...","backend_url":"https://api.clutta.io"}
-# Create it from a file you generate locally:
-#   clutta login
-#   kubectl create secret generic clutta-scan-credentials \
-#     --from-file=auth.json=$HOME/.clutta/auth.json
+# A normal installation needs a project-bound installation key, not a
+# developer's complete clutta login file. For migration, a Secret that only
+# contains auth.json continues to work through authJsonKey.
 credentials:
   existingSecretName: clutta-scan-credentials
+  apiKeyKey: api-key
   authJsonKey: auth.json
 
-# scan.yaml mounted at /etc/clutta/scan.yaml. The DaemonSet passes
-# --config=/etc/clutta/scan.yaml so this content drives runtime
-# behaviour. Edit in place to tune exclusions, triggers, cost caps.
-scanConfig: |
-  exclude:
-    namespaces:
+# What Clutta is allowed to observe. Include rules will be added only when the
+# runtime can enforce them end to end; today exclusions are the honest boundary.
+scope:
+  # Set this to the Clutta project that should receive this installation.
+  # Leave it empty only when the workspace default project is intended.
+  projectId: ""
+  namespaces:
+    exclude:
       - kube-system
       - kube-public
       - kube-node-lease
-  catchup:
-    window: 1h
-  diagnose:
-    # Fresh installs start in dry-run so operators can verify trigger
-    # configuration before any credit is consumed. Flip to false to
-    # enable live tier-4 dispatch.
-    dry_run: true
-    severity_signals:
-      - oom_kill
-      - kernel_panic
-      - segfault
-      - data_loss
-      - data_corruption
-      - disk_full
-      - unauthorized_access
-      - service_unavailable_global
-      - deployment_failed
-    frequency:
-      enabled: true
-      z_score_threshold: 3.0
-      baseline_window: 168h
-      min_baseline_samples: 100
-    co_occurrence:
-      enabled: true
-      min_distinct_signals: 3
-      window: 5m
-    novelty:
-      enabled: true
-      lookback: 24h
-      daily_cap: 50
-    cost:
-      max_invocations_per_day: 100
-      max_credits_per_day: 50
-      on_cap_exceeded: skip
-  cloud:
-    sync: true
-  limits:
-    max_file_size_mi: 100
 
-# RBAC: scan reads namespaces, pods, and events cluster-wide via the
-# Kubernetes API (client-go in-process, no kubectl in the image). Set
-# rbac.create=false if your cluster manages RBAC out-of-band.
+# kubernetes reads pod logs and state through the Kubernetes API and does not
+# mount node files. host mounts hostLogs.path. auto preserves the older dual
+# discovery behavior and is intended for migrations or unusual clusters.
+collection:
+  mode: kubernetes
+  hostLogs:
+    path: /var/log
+
+# manual detects and records evidence without automatically invoking Analyze.
+# automatic permits Clutta to analyze qualifying evidence.
+analysis:
+  mode: manual
+
+connection:
+  mode: cloud
+  backendUrl: https://api.clutta.io
+  proxy:
+    httpsProxy: ""
+    noProxy: ""
+
+telemetry:
+  enabled: true
+
+# State is ephemeral by default for compatibility. For node-local persistence,
+# pre-create hostPath with uid/gid 65532 ownership and set enabled=true.
+persistence:
+  enabled: false
+  hostPath: /var/lib/clutta-scan
+
 rbac:
   create: true
+  serviceAccountName: ""
 
-# DaemonSet pod spec knobs.
 resources:
   requests:
     cpu: 50m
@@ -88,65 +67,53 @@ resources:
     cpu: 200m
     memory: 256Mi
 
-# tolerations: empty by default, so scan runs on worker nodes only.
-# That is where application pods live, which is the signal scan exists
-# to find. Control-plane nodes run mostly kube-system pods (excluded in
-# scanConfig above), so landing there yields little and just spends a
-# pod slot. On managed clusters (EKS/GKE/AKS) the control plane is not
-# even schedulable, so this default matches reality there too.
-#
-# To ALSO cover control-plane nodes (self-managed/on-prem only, when you
-# want to diagnose control-plane health), uncomment the tolerations
-# below AND remove kube-system from scanConfig.exclude.namespaces so the
-# control-plane pods are actually analysed:
-#   tolerations:
-#     - key: node-role.kubernetes.io/control-plane
-#       operator: Exists
-#       effect: NoSchedule
-#     - key: node-role.kubernetes.io/master
-#       operator: Exists
-#       effect: NoSchedule
-#
-# Note: the k8s DaemonSet controller auto-adds the standard
-# eviction-survivor tolerations (not-ready, unreachable, disk/memory/
-# pid-pressure, unschedulable) to every DaemonSet pod template;
-# they're not listed here because re-stating defaults adds noise
-# without changing behaviour.
-tolerations: []
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
 
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+probes:
+  startup:
+    enabled: true
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 36
+  readiness:
+    enabled: true
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  liveness:
+    enabled: true
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+terminationGracePeriodSeconds: 30
+tolerations: []
 nodeSelector: {}
 affinity: {}
 
-# hostPath mount for node-local logs. The default /var/log covers
-# typical k8s nodes; some clusters use /var/log/containers exclusively.
-hostLogPath: /var/log
-
-# Binary-level environment variables the clutta CLI honours. The
-# backend URL is intentionally NOT exposed here: it comes from the
-# credentials Secret (the auth.json a user generated with `clutta
-# login`) and the api gateway routes every clutta-scan endpoint
-# uniformly under /v1/incident/*. One URL, one source of truth.
-env:
-  # CLUTTA_MAX_INPUT_BYTES: per-source byte cap on each scan cycle's
-  # input. Default in the binary is 250 MB. Increase on clusters with
-  # high-volume pod logs; decrease on memory-constrained nodes.
-  maxInputBytes: ""  # e.g. "536870912" for 512 MB
-
-  # CLUTTA_NO_TELEMETRY: opt out of the single anonymous first-run
-  # event. Set to true in air-gapped or compliance-restricted
-  # environments. The daemon never sends payload content; this only
-  # toggles the install-fingerprint ping.
-  disableTelemetry: false
-
-# extraEnv lets operators add arbitrary env vars not yet wrapped above
-# (e.g. HTTPS_PROXY in restricted-egress clusters, or future CLUTTA_*
-# knobs added in newer binaries). Each entry is rendered verbatim under
-# the container's env list. Pass Secret references via valueFrom.
+# Advanced environment escape hatch. Prefer the typed values above. Secret
+# data must use valueFrom; never place credentials in literal values.
 extraEnv: []
-  # - name: HTTPS_PROXY
-  #   value: http://proxy.internal:8080
-  # - name: ANTHROPIC_API_KEY
-  #   valueFrom:
-  #     secretKeyRef:
-  #       name: clutta-scan-llm-fallback
-  #       key: api-key
+
+# Deprecated compatibility fields. New installations must leave these empty.
+# scanConfig accepts the former unversioned runtime YAML verbatim. It will be
+# removed in the next major chart version.
+scanConfig: ""
+hostLogPath: ""
+env:
+  maxInputBytes: ""
+  disableTelemetry: false

@@ -9,6 +9,42 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version }}
 {{- end -}}
 
+{{/* True when the deprecated raw runtime configuration is in use. */}}
+{{- define "clutta-scan.legacyConfig" -}}
+{{- if ne (trim .Values.scanConfig) "" -}}true{{- else -}}false{{- end -}}
+{{- end -}}
+
+{{/* Kubernetes access remains enabled for legacy configurations. */}}
+{{- define "clutta-scan.kubernetesEnabled" -}}
+{{- if eq (include "clutta-scan.legacyConfig" .) "true" -}}
+true
+{{- else if or (eq .Values.collection.mode "kubernetes") (eq .Values.collection.mode "auto") -}}
+true
+{{- else -}}
+false
+{{- end -}}
+{{- end -}}
+
+{{/* Host logs remain mounted for legacy configurations and explicit modes. */}}
+{{- define "clutta-scan.hostLogsEnabled" -}}
+{{- if eq (include "clutta-scan.legacyConfig" .) "true" -}}
+true
+{{- else if or (eq .Values.collection.mode "host") (eq .Values.collection.mode "auto") -}}
+true
+{{- else -}}
+false
+{{- end -}}
+{{- end -}}
+
+{{/* A legacy hostLogPath override wins during upgrades. */}}
+{{- define "clutta-scan.hostLogPath" -}}
+{{- if .Values.hostLogPath -}}
+{{- .Values.hostLogPath -}}
+{{- else -}}
+{{- .Values.collection.hostLogs.path -}}
+{{- end -}}
+{{- end -}}
+
 {{/*
 Selector labels (subset of full labels; immutable on existing DaemonSets).
 */}}

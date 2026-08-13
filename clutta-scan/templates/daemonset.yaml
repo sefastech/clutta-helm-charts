@@ -17,12 +17,17 @@ spec:
       labels:
         {{- include "clutta-scan.labels" . | nindent 8 }}
       annotations:
-        # Roll the DaemonSet when scan.yaml changes.
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
-      {{- if .Values.rbac.create }}
+      automountServiceAccountToken: {{ eq (include "clutta-scan.kubernetesEnabled" .) "true" }}
+      {{- if and (eq (include "clutta-scan.kubernetesEnabled" .) "true") .Values.rbac.create }}
       serviceAccountName: {{ .Release.Name }}
+      {{- else if and (eq (include "clutta-scan.kubernetesEnabled" .) "true") .Values.rbac.serviceAccountName }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
       {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- with .Values.image.pullSecret }}
       imagePullSecrets:
         - name: {{ . }}
@@ -50,28 +55,39 @@ spec:
             - --config
             - /etc/clutta/scan.yaml
           env:
-            # CLUTTA_AUTH_PATH points the daemon's credential chain at the
-            # mounted Secret directly. No bootstrap initContainer, no
-            # emptyDir handoff, no HOME gymnastics: the file the Secret
-            # exposes IS the file the daemon reads. The chain still falls
-            # through to $HOME if this env var is unset, so the same image
-            # works locally.
-            - name: CLUTTA_AUTH_PATH
-              value: /etc/clutta/auth.json
             - name: HOME
               value: /var/clutta
-            # NODE_NAME scopes the k8s provider's pod queries to this node.
-            # Without it every DaemonSet pod lists the whole cluster's pods,
-            # so an N-node cluster produces N copies of every pod snapshot.
+            {{- if eq (include "clutta-scan.kubernetesEnabled" .) "true" }}
             - name: NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- end }}
+            {{- if or (eq (include "clutta-scan.legacyConfig" .) "true") (eq .Values.connection.mode "cloud") }}
+            - name: CLUTTA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentials.existingSecretName }}
+                  key: {{ .Values.credentials.apiKeyKey }}
+                  optional: true
+            - name: CLUTTA_AUTH_PATH
+              value: /etc/clutta/credentials/{{ .Values.credentials.authJsonKey }}
+            - name: CLUTTA_BACKEND_URL
+              value: {{ .Values.connection.backendUrl | quote }}
+            {{- end }}
+            {{- with .Values.connection.proxy.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.connection.proxy.noProxy }}
+            - name: NO_PROXY
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.env.maxInputBytes }}
             - name: CLUTTA_MAX_INPUT_BYTES
               value: {{ .Values.env.maxInputBytes | quote }}
             {{- end }}
-            {{- if .Values.env.disableTelemetry }}
+            {{- if or (eq .Values.connection.mode "local") (not .Values.telemetry.enabled) .Values.env.disableTelemetry }}
             - name: CLUTTA_NO_TELEMETRY
               value: "1"
             {{- end }}
@@ -79,36 +95,70 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
-            - name: host-logs
-              mountPath: /var/log
-              readOnly: true
             - name: scan-config
               mountPath: /etc/clutta/scan.yaml
               subPath: scan.yaml
               readOnly: true
+            {{- if or (eq (include "clutta-scan.legacyConfig" .) "true") (eq .Values.connection.mode "cloud") }}
             - name: credentials
-              mountPath: /etc/clutta/auth.json
-              subPath: {{ .Values.credentials.authJsonKey }}
+              mountPath: /etc/clutta/credentials
               readOnly: true
+            {{- end }}
+            {{- if eq (include "clutta-scan.hostLogsEnabled" .) "true" }}
+            - name: host-logs
+              mountPath: /var/log
+              readOnly: true
+            {{- end }}
             - name: clutta-state
               mountPath: /var/clutta
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          {{- if .Values.probes.startup.enabled }}
+          startupProbe:
+            exec:
+              command: ["/usr/local/bin/clutta", "scan", "health"]
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if .Values.probes.readiness.enabled }}
+          readinessProbe:
+            exec:
+              command: ["/usr/local/bin/clutta", "scan", "health", "--ready"]
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          {{- end }}
+          {{- if .Values.probes.liveness.enabled }}
+          livenessProbe:
+            exec:
+              command: ["/usr/local/bin/clutta", "scan", "health"]
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          {{- end }}
       volumes:
-        - name: host-logs
-          hostPath:
-            path: {{ .Values.hostLogPath | quote }}
-            type: DirectoryOrCreate
         - name: scan-config
           configMap:
             name: {{ .Release.Name }}-config
+        {{- if or (eq (include "clutta-scan.legacyConfig" .) "true") (eq .Values.connection.mode "cloud") }}
         - name: credentials
           secret:
             secretName: {{ .Values.credentials.existingSecretName }}
+        {{- end }}
+        {{- if eq (include "clutta-scan.hostLogsEnabled" .) "true" }}
+        - name: host-logs
+          hostPath:
+            path: {{ include "clutta-scan.hostLogPath" . | quote }}
+            type: Directory
+        {{- end }}
         - name: clutta-state
+          {{- if .Values.persistence.enabled }}
+          hostPath:
+            path: {{ .Values.persistence.hostPath | quote }}
+            type: Directory
+          {{- else }}
           emptyDir: {}
+          {{- end }}

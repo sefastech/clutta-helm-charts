@@ -1,72 +1,151 @@
-# clutta-scan
+# Clutta Scan
 
-Deploys the Clutta scan daemon as a Kubernetes DaemonSet. One pod per node, each watching node-local logs (via a `hostPath` mount of `/var/log`), polling the Kubernetes API for events and pod state, and syncing findings to the Clutta backend.
+This chart deploys one Clutta Scan pod per Kubernetes node. The public
+configuration describes operator intent: where Clutta may collect evidence,
+whether Analyze may run automatically, and where results are sent. Detection
+policy and Clutta's internal vocabulary are managed by the product.
 
 ## Install
 
+Create an installation key in Clutta, then store it in a Kubernetes Secret.
+Avoid mounting a developer's complete login file for new installations. The
+key identifies the workspace. The Scan configuration identifies the project.
+
 ```bash
-# 1. Create the credentials Secret from your local clutta login.
-clutta login
 kubectl create namespace clutta
 kubectl create secret generic clutta-scan-credentials \
   --namespace clutta \
-  --from-file=auth.json=$HOME/.clutta/auth.json
+  --from-literal=api-key="$CLUTTA_API_KEY"
 
-# 2. Install the chart.
-helm install clutta-scan ./k8s/helm/clutta-scan \
-  --namespace clutta
+helm repo add clutta https://raw.githubusercontent.com/sefastech/clutta-helm-charts/main
+helm repo update clutta
+helm install clutta-scan clutta/clutta-scan \
+  --namespace clutta \
+  --set-string scope.projectId="$CLUTTA_PROJECT_ID"
 
-# 3. Verify.
-kubectl -n clutta get daemonset clutta-scan
+kubectl -n clutta rollout status daemonset/clutta-scan
 kubectl -n clutta logs -l app.kubernetes.io/name=clutta-scan --tail=50
 ```
 
-## Customise
+If `scope.projectId` is empty, the installation appears in the workspace's
+default project. Catalog rejects a project ID from another workspace.
 
-Override `values.yaml` defaults at install time:
+## Public configuration
+
+The chart renders a versioned `scan.yaml` contract:
+
+```yaml
+version: 2
+scope:
+  project_id: 11111111-1111-4111-8111-111111111111
+  namespaces:
+    exclude:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+collection:
+  mode: kubernetes
+analysis:
+  mode: manual
+connection:
+  mode: cloud
+```
+
+Use Helm values to change this contract. A `values.schema.json` file rejects
+unknown fields and invalid modes before installation.
+
+| Value | Default | Purpose |
+| --- | --- | --- |
+| `scope.projectId` | empty | Project that receives this installation; empty uses the workspace default |
+| `scope.namespaces.exclude` | Kubernetes system namespaces | Namespaces Clutta must not observe |
+| `collection.mode` | `kubernetes` | Evidence source: `kubernetes`, `host`, or `auto` |
+| `analysis.mode` | `manual` | `manual` records evidence; `automatic` may invoke Analyze |
+| `connection.mode` | `cloud` | `cloud` syncs evidence; `local` keeps the daemon offline |
+| `connection.backendUrl` | `https://api.clutta.io` | Clutta API URL for a cloud connection |
+| `telemetry.enabled` | `true` | Product telemetry switch |
+| `persistence.enabled` | `false` | Preserve node-local Scan state across pod replacement |
+
+Example:
 
 ```bash
-helm install clutta-scan ./k8s/helm/clutta-scan \
+helm upgrade --install clutta-scan clutta/clutta-scan \
   --namespace clutta \
-  --set image.tag=0.1.1 \
-  --set-file scanConfig=./my-scan.yaml
+  --set analysis.mode=automatic \
+  --set persistence.enabled=true
 ```
 
-Common tweaks:
+## Collection modes
 
-- **Live mode**: edit `scanConfig.diagnose.dry_run` to `false`. Default is `true` so fresh installs never consume credits without operator opt-in.
-- **Exclude noisy namespaces**: extend `scanConfig.exclude.namespaces`.
-- **Tighten resources**: adjust `resources.requests` and `resources.limits`.
-- **Keep scan off control-plane**: remove the master tolerations from `values.yaml`.
+`kubernetes` is the default. It reads workload logs and state through the
+Kubernetes API and does not mount the node's `/var/log` directory.
 
-## What it watches
+`host` reads `collection.hostLogs.path` and does not request Kubernetes API
+access. The directory is mounted read-only and must already exist.
 
-| Source        | How                                                                      |
-|---------------|--------------------------------------------------------------------------|
-| Filesystem    | `hostPath` mount of `/var/log` (default), read by the file provider      |
-| Kubernetes    | Kubernetes API (namespaces, pods, events) via the ServiceAccount, using client-go in-process |
-| systemd-journal | Not available inside the container; gracefully skipped                 |
+`auto` enables Kubernetes and host collection. Use it only when both sources
+are intentionally required or while migrating an older deployment.
 
-## RBAC
+## Security model
 
-The chart creates a `ClusterRole` with `get + list` on `pods`, `events`, and `namespaces` cluster-wide. Set `rbac.create=false` if your cluster manages RBAC out-of-band.
+The default pod runs as uid/gid 65532 with no Linux capabilities, no privilege
+escalation, a read-only root filesystem, and the runtime-default seccomp
+profile. The Kubernetes mode creates read-only cluster RBAC for namespaces,
+pods, pod logs, and events. Host mode creates no Clutta ServiceAccount or RBAC
+objects.
 
-## Coverage
+Set `rbac.create=false` only when equivalent access is managed separately, and
+set `rbac.serviceAccountName` when the access belongs to a non-default account.
+Credential values belong in the referenced Secret, never in `values.yaml` or
+`extraEnv` literals.
 
-Per-pod coverage (how many sources each scan instance is actually subscribed to vs how many failed silently) appears in the daemon log on every transition (`coverage: N/M source(s) running`) and in `clutta scan status`. A WARN line names the failure when a source drops.
+## Persistent state
 
-Cluster-wide coverage (how many nodes are running scan vs how many should be) is an operator-side check. A single pod cannot know about its siblings:
+State is ephemeral by default for upgrade compatibility. To preserve local
+queues, checkpoints, and installation identity across pod replacement, prepare
+the directory on every selected node:
 
 ```bash
-# pods vs nodes — should match for a healthy DaemonSet roll-out.
-kubectl -n clutta get pods -l app.kubernetes.io/name=clutta-scan -o wide
-kubectl get nodes
+sudo install -d -o 65532 -g 65532 -m 0700 /var/lib/clutta-scan
 ```
 
-If the pod count is lower than the schedulable node count, a node is unreachable, tainted in a way the DaemonSet auto-tolerations don't cover, or hitting a scheduling constraint.
+Then set:
 
-## State persistence
+```yaml
+persistence:
+  enabled: true
+  hostPath: /var/lib/clutta-scan
+```
 
-Per-pod state (PID, log, findings, cost, sync) lives in an `emptyDir` volume. On pod restart, the installation_id resets and any unsynced findings re-emit; the backend dedups by Finding.ID.
+The chart uses `hostPath.type: Directory`, so a missing directory fails closed
+instead of creating a root-owned path that the non-root process cannot use.
 
-To persist state across restarts, swap the `clutta-state` volume for a `hostPath` or PVC (chart change required; not currently a values knob).
+## Health and coverage
+
+Startup and liveness probes verify that the daemon is publishing fresh state.
+The readiness probe additionally requires realtime phase and complete source
+coverage. Inspect rollout or source failures with:
+
+```bash
+kubectl -n clutta get pods -l app.kubernetes.io/name=clutta-scan
+kubectl -n clutta logs -l app.kubernetes.io/name=clutta-scan --tail=100
+```
+
+## Migrating an existing installation
+
+Existing Secrets containing `auth.json` continue to work through
+`credentials.authJsonKey`. Replace them with project-bound `api-key` Secrets
+when practical.
+
+The deprecated `scanConfig` value accepts an existing unversioned runtime file
+verbatim during migration:
+
+```bash
+helm upgrade --install clutta-scan clutta/clutta-scan \
+  --namespace clutta \
+  --set-file scanConfig=./scan.yaml
+```
+
+When `scanConfig` is set, the chart preserves the previous Kubernetes and host
+collection behavior. Remove it after expressing the deployment with the typed
+values above. The compatibility field is scheduled for removal in the next
+major chart version.
