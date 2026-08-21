@@ -17,7 +17,7 @@ kubectl create secret generic clutta-scan-credentials \
   --namespace clutta \
   --from-literal=api-key="$CLUTTA_API_KEY"
 
-helm repo add clutta https://raw.githubusercontent.com/sefastech/clutta-helm-charts/main
+helm repo add clutta https://sefastech.github.io/clutta-helm-charts --force-update
 helm repo update clutta
 helm install clutta-scan clutta/clutta-scan \
   --namespace clutta \
@@ -149,3 +149,9 @@ When `scanConfig` is set, the chart preserves the previous Kubernetes and host
 collection behavior. Remove it after expressing the deployment with the typed
 values above. The compatibility field is scheduled for removal in the next
 major chart version.
+
+## Support
+
+- [Clutta documentation](https://docs.clutta.io)
+- [Open an issue](https://github.com/sefastech/clutta-helm-charts/issues)
+- Security reports: [support@clutta.io](mailto:support@clutta.io)
