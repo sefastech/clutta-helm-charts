@@ -1,14 +1,23 @@
 apiVersion: v2
 name: clutta-scan
-description: Clutta Scan for Kubernetes evidence collection and analysis.
+description: Deploy Clutta Scan across Kubernetes nodes for evidence collection and analysis.
 type: application
-# version + appVersion are managed by .github/workflows/release-clutta-incident.yml.
-# Both values get rewritten from the release tag on every clutta-incident-v*
-# push, so editing them here by hand is a no-op the next time CI runs. Don't.
-#
-#   version    = bare semver, ties one chart .tgz to one binary release
-#                (e.g. 0.1.10 packages binary v0.1.10) so the chart .tgz is
-#                immutable from helm's POV and never overwritten in-place
-#   appVersion = full tag, mirrors the Docker Hub image tag exactly
-version: 0.2.1
-appVersion: "v0.2.1"
+# Chart releases and application releases are versioned independently.
+# version identifies this immutable chart package.
+# appVersion identifies the default sefastech/clutta-scan image.
+version: 0.3.0
+appVersion: "v0.2.2"
+home: https://clutta.io
+icon: https://clutta.io/favicon.svg
+sources:
+  - https://github.com/sefastech/clutta-helm-charts
+maintainers:
+  - name: SEFAS Technologies
+    url: https://clutta.io
+annotations:
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://docs.clutta.io
+    - name: Clutta Cloud
+      url: https://app.clutta.io

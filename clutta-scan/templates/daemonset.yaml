@@ -22,8 +22,8 @@ spec:
       automountServiceAccountToken: {{ eq (include "clutta-scan.kubernetesEnabled" .) "true" }}
       {{- if and (eq (include "clutta-scan.kubernetesEnabled" .) "true") .Values.rbac.create }}
       serviceAccountName: {{ .Release.Name }}
-      {{- else if and (eq (include "clutta-scan.kubernetesEnabled" .) "true") .Values.rbac.serviceAccountName }}
-      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      {{- else if eq (include "clutta-scan.kubernetesEnabled" .) "true" }}
+      serviceAccountName: {{ required "rbac.serviceAccountName is required when Kubernetes collection is enabled and rbac.create is false" .Values.rbac.serviceAccountName }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       securityContext:
@@ -62,18 +62,26 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CLUTTA_AGENT_DAEMONSET
+              value: {{ .Release.Name | quote }}
             {{- end }}
-            {{- if or (eq (include "clutta-scan.legacyConfig" .) "true") (eq .Values.connection.mode "cloud") }}
+            {{- if eq .Values.connection.mode "cloud" }}
             - name: CLUTTA_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.credentials.existingSecretName }}
                   key: {{ .Values.credentials.apiKeyKey }}
-                  optional: true
-            - name: CLUTTA_AUTH_PATH
-              value: /etc/clutta/credentials/{{ .Values.credentials.authJsonKey }}
+            - name: CLUTTA_WORKSPACE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentials.existingSecretName }}
+                  key: {{ .Values.credentials.workspaceIdKey }}
             - name: CLUTTA_BACKEND_URL
-              value: {{ .Values.connection.backendUrl | quote }}
+              value: "https://api.clutta.io"
             {{- end }}
             {{- with .Values.connection.proxy.httpsProxy }}
             - name: HTTPS_PROXY
@@ -83,27 +91,15 @@ spec:
             - name: NO_PROXY
               value: {{ . | quote }}
             {{- end }}
-            {{- if .Values.env.maxInputBytes }}
-            - name: CLUTTA_MAX_INPUT_BYTES
-              value: {{ .Values.env.maxInputBytes | quote }}
-            {{- end }}
-            {{- if or (eq .Values.connection.mode "local") (not .Values.telemetry.enabled) .Values.env.disableTelemetry }}
+            {{- if or (eq .Values.connection.mode "local") (not .Values.telemetry.enabled) }}
             - name: CLUTTA_NO_TELEMETRY
               value: "1"
-            {{- end }}
-            {{- with .Values.extraEnv }}
-            {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
             - name: scan-config
               mountPath: /etc/clutta/scan.yaml
               subPath: scan.yaml
               readOnly: true
-            {{- if or (eq (include "clutta-scan.legacyConfig" .) "true") (eq .Values.connection.mode "cloud") }}
-            - name: credentials
-              mountPath: /etc/clutta/credentials
-              readOnly: true
-            {{- end }}
             {{- if eq (include "clutta-scan.hostLogsEnabled" .) "true" }}
             - name: host-logs
               mountPath: /var/log
@@ -143,15 +139,10 @@ spec:
         - name: scan-config
           configMap:
             name: {{ .Release.Name }}-config
-        {{- if or (eq (include "clutta-scan.legacyConfig" .) "true") (eq .Values.connection.mode "cloud") }}
-        - name: credentials
-          secret:
-            secretName: {{ .Values.credentials.existingSecretName }}
-        {{- end }}
         {{- if eq (include "clutta-scan.hostLogsEnabled" .) "true" }}
         - name: host-logs
           hostPath:
-            path: {{ include "clutta-scan.hostLogPath" . | quote }}
+            path: {{ .Values.collection.hostLogs.path | quote }}
             type: Directory
         {{- end }}
         - name: clutta-state

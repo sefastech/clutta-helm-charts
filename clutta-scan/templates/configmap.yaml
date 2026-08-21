@@ -6,9 +6,6 @@ metadata:
     {{- include "clutta-scan.labels" . | nindent 4 }}
 data:
   scan.yaml: |
-{{- if eq (include "clutta-scan.legacyConfig" .) "true" }}
-{{ .Values.scanConfig | indent 4 }}
-{{- else }}
     version: 2
     scope:
       project_id: {{ .Values.scope.projectId | quote }}
@@ -21,4 +18,3 @@ data:
       mode: {{ .Values.analysis.mode }}
     connection:
       mode: {{ .Values.connection.mode }}
-{{- end }}

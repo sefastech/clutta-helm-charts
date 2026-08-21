@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ include "clutta-scan.clusterRoleName" . }}
   labels:
     {{- include "clutta-scan.labels" . | nindent 4 }}
 rules:

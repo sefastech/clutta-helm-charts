@@ -18,11 +18,11 @@
     "credentials": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["existingSecretName", "apiKeyKey", "authJsonKey"],
+      "required": ["existingSecretName", "apiKeyKey", "workspaceIdKey"],
       "properties": {
         "existingSecretName": {"type": "string", "minLength": 1},
         "apiKeyKey": {"type": "string", "minLength": 1},
-        "authJsonKey": {"type": "string", "minLength": 1}
+        "workspaceIdKey": {"type": "string", "minLength": 1}
       }
     },
     "scope": {
@@ -75,10 +75,9 @@
     "connection": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mode", "backendUrl", "proxy"],
+      "required": ["mode", "proxy"],
       "properties": {
         "mode": {"type": "string", "enum": ["cloud", "local"]},
-        "backendUrl": {"type": "string", "pattern": "^https://[^\\s]+$"},
         "proxy": {
           "type": "object",
           "additionalProperties": false,
@@ -132,30 +131,7 @@
     "terminationGracePeriodSeconds": {"type": "integer", "minimum": 1},
     "tolerations": {"type": "array", "items": {"type": "object"}},
     "nodeSelector": {"type": "object", "additionalProperties": {"type": "string"}},
-    "affinity": {"type": "object"},
-    "extraEnv": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": {"type": "string", "minLength": 1},
-          "value": {"type": ["string", "number", "boolean"]},
-          "valueFrom": {"type": "object"}
-        }
-      }
-    },
-    "scanConfig": {"type": "string"},
-    "hostLogPath": {"type": "string"},
-    "env": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["maxInputBytes", "disableTelemetry"],
-      "properties": {
-        "maxInputBytes": {"type": ["string", "integer"]},
-        "disableTelemetry": {"type": "boolean"}
-      }
-    }
+    "affinity": {"type": "object"}
   },
   "required": [
     "image",
@@ -174,11 +150,7 @@
     "terminationGracePeriodSeconds",
     "tolerations",
     "nodeSelector",
-    "affinity",
-    "extraEnv",
-    "scanConfig",
-    "hostLogPath",
-    "env"
+    "affinity"
   ],
   "definitions": {
     "probe": {

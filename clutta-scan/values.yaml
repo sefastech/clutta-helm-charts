@@ -6,13 +6,11 @@ image:
   pullPolicy: ""
   pullSecret: ""
 
-# A normal installation needs a project-bound installation key, not a
-# developer's complete clutta login file. For migration, a Secret that only
-# contains auth.json continues to work through authJsonKey.
+# Create this Secret from the project-specific setup shown in Clutta Cloud.
 credentials:
   existingSecretName: clutta-scan-credentials
   apiKeyKey: api-key
-  authJsonKey: auth.json
+  workspaceIdKey: workspace-id
 
 # What Clutta is allowed to observe. Include rules will be added only when the
 # runtime can enforce them end to end; today exclusions are the honest boundary.
@@ -27,8 +25,8 @@ scope:
       - kube-node-lease
 
 # kubernetes reads pod logs and state through the Kubernetes API and does not
-# mount node files. host mounts hostLogs.path. auto preserves the older dual
-# discovery behavior and is intended for migrations or unusual clusters.
+# mount node files. host mounts hostLogs.path. auto enables both collection
+# paths and should be selected only when both are required.
 collection:
   mode: kubernetes
   hostLogs:
@@ -41,7 +39,6 @@ analysis:
 
 connection:
   mode: cloud
-  backendUrl: https://api.clutta.io
   proxy:
     httpsProxy: ""
     noProxy: ""
@@ -104,16 +101,3 @@ terminationGracePeriodSeconds: 30
 tolerations: []
 nodeSelector: {}
 affinity: {}
-
-# Advanced environment escape hatch. Prefer the typed values above. Secret
-# data must use valueFrom; never place credentials in literal values.
-extraEnv: []
-
-# Deprecated compatibility fields. New installations must leave these empty.
-# scanConfig accepts the former unversioned runtime YAML verbatim. It will be
-# removed in the next major chart version.
-scanConfig: ""
-hostLogPath: ""
-env:
-  maxInputBytes: ""
-  disableTelemetry: false

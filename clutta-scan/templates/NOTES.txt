@@ -1,14 +1,14 @@
-Clutta Scan is configured for {{ .Values.collection.mode }} collection in {{ .Values.analysis.mode }} analysis mode.
+Clutta Scan is configured for {{ .Values.collection.mode }} collection, {{ .Values.analysis.mode }} analysis, and a {{ .Values.connection.mode }} connection.
 
 Verify the rollout:
   kubectl -n {{ .Release.Namespace }} rollout status daemonset/{{ .Release.Name }}
   kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/name=clutta-scan
+  kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/name=clutta-scan --tail=50
 
-{{- if eq (include "clutta-scan.legacyConfig" .) "true" }}
-NOTICE: scanConfig is the deprecated unversioned configuration escape hatch.
-Migrate to the typed chart values before the next major chart release.
-{{- end }}
 {{- if .Values.persistence.enabled }}
 Persistent state is enabled at {{ .Values.persistence.hostPath }}.
 The directory must already exist on every selected node and be owned by uid/gid 65532.
 {{- end }}
+
+View installations: https://app.clutta.io
+Documentation: https://docs.clutta.io
