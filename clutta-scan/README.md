@@ -45,6 +45,10 @@ Clutta Cloud resolves the workspace from the API key and verifies the supplied
 workspace and project boundaries. If `scope.projectId` is empty, the
 installation uses the workspace's default project.
 
+The published Scan image supports both `linux/amd64` and `linux/arm64`. Docker
+chooses the matching image automatically on Intel, AMD, and ARM64 hosts. If a
+private registry mirror is used, mirror both platforms for each image tag.
+
 ## Public configuration
 
 The chart renders a versioned `scan.yaml` contract:
