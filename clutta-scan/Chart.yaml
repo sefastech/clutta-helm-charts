@@ -2,11 +2,16 @@ apiVersion: v2
 name: clutta-scan
 description: Deploy Clutta Scan across Kubernetes nodes for evidence collection and analysis.
 type: application
+# CONSTRAINT: Before creating a release tag, ensure appVersion below matches the
+# version being released. The release workflow validates this to prevent drift.
+# If this is out of sync, raise a PR to update both appVersion and version fields
+# before attempting a release.
+#
 # Chart releases and application releases are versioned independently.
 # version identifies this immutable chart package.
 # appVersion identifies the default sefastech/clutta-scan image.
-version: 0.3.0
-appVersion: "v0.2.2"
+version: 0.3.1
+appVersion: "v0.2.3"
 home: https://clutta.io
 icon: https://clutta.io/favicon.svg
 sources:
