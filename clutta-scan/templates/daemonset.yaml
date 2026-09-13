@@ -51,7 +51,6 @@ spec:
           args:
             - scan
             - start
-            - --foreground
             - --config
             - /etc/clutta/scan.yaml
           env:
