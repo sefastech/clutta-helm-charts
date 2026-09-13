@@ -9,6 +9,31 @@ entries:
         - name: Clutta Cloud
           url: https://app.clutta.io
     apiVersion: v2
+    appVersion: v0.2.4
+    created: "2026-09-13T17:50:32.766891118+01:00"
+    description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
+      and analysis.
+    digest: ac7f52daf5ea347ba51627180e2e75db37025f6d90b36bed283e09938b99d98f
+    home: https://clutta.io
+    icon: https://clutta.io/favicon.svg
+    maintainers:
+    - name: SEFAS Technologies
+      url: https://clutta.io
+    name: clutta-scan
+    sources:
+    - https://github.com/sefastech/clutta-helm-charts
+    type: application
+    urls:
+    - https://sefastech.github.io/clutta-helm-charts/charts/clutta-scan-0.3.2.tgz
+    version: 0.3.2
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Documentation
+          url: https://docs.clutta.io
+        - name: Clutta Cloud
+          url: https://app.clutta.io
+    apiVersion: v2
     appVersion: v0.2.3
     created: "2026-09-07T13:13:23.359573161Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
@@ -274,4 +299,4 @@ entries:
     urls:
     - https://sefastech.github.io/clutta-helm-charts/charts/clutta-scan-0.1.10.tgz
     version: 0.1.10
-generated: "2026-09-07T13:13:23.347449746Z"
+generated: "2026-09-13T17:50:32.766151376+01:00"
