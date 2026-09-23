@@ -83,7 +83,7 @@ unknown fields and invalid modes before installation.
 | `connection.proxy.httpsProxy` | empty | Optional HTTPS proxy for outbound Clutta Cloud traffic |
 | `connection.proxy.noProxy` | empty | Optional hosts that bypass the HTTPS proxy |
 | `telemetry.enabled` | `true` | Product telemetry switch |
-| `persistence.enabled` | `false` | Preserve node-local Scan state across pod replacement |
+| `persistence.enabled` | `false` | Preserve node-local queues and sync state across pod replacement; recommended for production after node preparation |
 
 Show all supported values and defaults:
 
@@ -129,9 +129,13 @@ referenced Secret. It does not mount the complete Secret into the filesystem.
 
 ## Persistent state
 
-State is ephemeral by default for upgrade compatibility. To preserve local
-queues, checkpoints, and installation identity across pod replacement, prepare
-the directory on every selected node:
+State remains ephemeral by default because the chart cannot safely create its
+node-local directory with the required ownership. Ephemeral state is suitable
+for evaluations that accept evidence loss when a pod is replaced.
+
+Persistent state is recommended for production. It preserves local queues,
+the cloud sync cursor, and installation identity across pod
+replacement on the same node. Prepare the directory on every selected node:
 
 ```bash
 sudo install -d -o 65532 -g 65532 -m 0700 /var/lib/clutta-scan
@@ -147,6 +151,11 @@ persistence:
 
 The chart uses `hostPath.type: Directory`, so a missing directory fails closed
 instead of creating a root-owned path that the non-root process cannot use.
+Node-local persistence does not survive loss of the underlying node, and it
+cannot recover an observation that was interrupted before its local queue
+append. The repository runbook at
+`docs/runbooks/validation/scan-durability.md` contains the complete failure
+matrix and executable tests.
 
 ## Health and coverage
 

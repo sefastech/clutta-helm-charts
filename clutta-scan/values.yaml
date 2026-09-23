@@ -46,8 +46,9 @@ connection:
 telemetry:
   enabled: true
 
-# State is ephemeral by default for compatibility. For node-local persistence,
-# pre-create hostPath with uid/gid 65532 ownership and set enabled=true.
+# State is ephemeral by default because hostPath must be prepared by the node
+# operator. For production, pre-create hostPath with uid/gid 65532 ownership
+# and set enabled=true so queues and sync state survive pod replacement.
 persistence:
   enabled: false
   hostPath: /var/lib/clutta-scan
