@@ -72,6 +72,17 @@
         "mode": {"type": "string", "enum": ["manual", "automatic"]}
       }
     },
+    "flowDiscovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "correlationField", "windowSeconds", "mode"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "correlationField": {"type": "string"},
+        "windowSeconds": {"type": "integer", "minimum": 1},
+        "mode": {"type": "string", "enum": ["local", "centre-join"]}
+      }
+    },
     "connection": {
       "type": "object",
       "additionalProperties": false,
@@ -139,6 +150,7 @@
     "scope",
     "collection",
     "analysis",
+    "flowDiscovery",
     "connection",
     "telemetry",
     "persistence",

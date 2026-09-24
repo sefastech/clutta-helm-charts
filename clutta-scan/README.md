@@ -66,6 +66,8 @@ collection:
   mode: kubernetes
 analysis:
   mode: manual
+flow_discovery:
+  enabled: false
 connection:
   mode: cloud
 ```
@@ -79,6 +81,10 @@ unknown fields and invalid modes before installation.
 | `scope.namespaces.exclude` | Kubernetes system namespaces | Namespaces Clutta must not observe |
 | `collection.mode` | `kubernetes` | Evidence source: `kubernetes`, `host`, or `auto` |
 | `analysis.mode` | `manual` | `manual` records evidence; `automatic` may invoke Analyze |
+| `flowDiscovery.enabled` | `false` | Learn recurring cross-service flows from collected evidence |
+| `flowDiscovery.correlationField` | empty | Optional field used to correlate steps; empty enables automatic selection |
+| `flowDiscovery.windowSeconds` | `60` | Maximum interval used to assemble one flow run |
+| `flowDiscovery.mode` | `local` | Assemble flow candidates locally or use `centre-join` |
 | `connection.mode` | `cloud` | `cloud` syncs evidence; `local` keeps the daemon offline |
 | `connection.proxy.httpsProxy` | empty | Optional HTTPS proxy for outbound Clutta Cloud traffic |
 | `connection.proxy.noProxy` | empty | Optional hosts that bypass the HTTPS proxy |
@@ -97,8 +103,15 @@ Example override:
 helm upgrade --install clutta-scan clutta/clutta-scan \
   --namespace clutta \
   --set analysis.mode=automatic \
+  --set flowDiscovery.enabled=true \
   --set persistence.enabled=true
 ```
+
+Flow discovery is disabled by default. Enable it only when the installation
+should learn recurring cross-service flows. Leave `flowDiscovery.correlationField`
+empty to use automatic correlation selection, or set it to a known field such
+as `session_id`. The chart renders the corresponding `flow_discovery` block in
+`scan.yaml` and keeps all other collection and analysis settings unchanged.
 
 ## Collection modes
 

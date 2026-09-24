@@ -16,5 +16,14 @@ data:
       mode: {{ .Values.collection.mode }}
     analysis:
       mode: {{ .Values.analysis.mode }}
+    {{- if .Values.flowDiscovery.enabled }}
+    flow_discovery:
+      enabled: true
+      {{- with .Values.flowDiscovery.correlationField }}
+      correlation_field: {{ . | quote }}
+      {{- end }}
+      window_seconds: {{ .Values.flowDiscovery.windowSeconds }}
+      mode: {{ .Values.flowDiscovery.mode }}
+    {{- end }}
     connection:
       mode: {{ .Values.connection.mode }}
