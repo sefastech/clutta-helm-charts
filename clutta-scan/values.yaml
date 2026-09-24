@@ -38,9 +38,10 @@ analysis:
   mode: manual
 
 # Completion monitoring learns recurring cross-service flows from collected
-# evidence. It remains disabled by default until explicitly enabled.
+# evidence. Discovery is read-only and review-only; learned flows are not
+# activated or alerted without an explicit operator decision.
 flowDiscovery:
-  enabled: false
+  enabled: true
   # Leave empty to let Scan select a correlation field from cross-service
   # evidence. Set this only when the field is known and intentional.
   correlationField: ""

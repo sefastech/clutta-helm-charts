@@ -67,7 +67,7 @@ collection:
 analysis:
   mode: manual
 flow_discovery:
-  enabled: false
+  enabled: true
 connection:
   mode: cloud
 ```
@@ -81,7 +81,7 @@ unknown fields and invalid modes before installation.
 | `scope.namespaces.exclude` | Kubernetes system namespaces | Namespaces Clutta must not observe |
 | `collection.mode` | `kubernetes` | Evidence source: `kubernetes`, `host`, or `auto` |
 | `analysis.mode` | `manual` | `manual` records evidence; `automatic` may invoke Analyze |
-| `flowDiscovery.enabled` | `false` | Learn recurring cross-service flows from collected evidence |
+| `flowDiscovery.enabled` | `true` | Learn recurring cross-service flows from collected evidence; learned flows remain review-only |
 | `flowDiscovery.correlationField` | empty | Optional field used to correlate steps; empty enables automatic selection |
 | `flowDiscovery.windowSeconds` | `60` | Maximum interval used to assemble one flow run |
 | `flowDiscovery.mode` | `local` | Assemble flow candidates locally or use `centre-join` |
@@ -103,15 +103,17 @@ Example override:
 helm upgrade --install clutta-scan clutta/clutta-scan \
   --namespace clutta \
   --set analysis.mode=automatic \
-  --set flowDiscovery.enabled=true \
   --set persistence.enabled=true
 ```
 
-Flow discovery is disabled by default. Enable it only when the installation
-should learn recurring cross-service flows. Leave `flowDiscovery.correlationField`
-empty to use automatic correlation selection, or set it to a known field such
-as `session_id`. The chart renders the corresponding `flow_discovery` block in
-`scan.yaml` and keeps all other collection and analysis settings unchanged.
+Flow discovery is enabled by default because it is read-only and review-only.
+It learns recurring cross-service flows locally, but does not activate a flow,
+raise a completion alert, or invoke Analyze automatically. Leave
+`flowDiscovery.correlationField` empty to use automatic correlation selection,
+or set it to a known field such as `session_id`. Set
+`flowDiscovery.enabled=false` when an installation must not perform flow
+discovery. The chart renders the corresponding `flow_discovery` block in
+`scan.yaml` and keeps activation behind the operator review surface.
 
 ## Collection modes
 
