@@ -9,8 +9,33 @@ entries:
         - name: Clutta Cloud
           url: https://app.clutta.io
     apiVersion: v2
+    appVersion: v0.2.13
+    created: "2026-09-24T14:35:59.793317426Z"
+    description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
+      and analysis.
+    digest: 41eead9f2791a365eb6d54f9b7c7a53e58c4df2406df474bed7410bac6e4c45b
+    home: https://clutta.io
+    icon: https://clutta.io/favicon.svg
+    maintainers:
+    - name: SEFAS Technologies
+      url: https://clutta.io
+    name: clutta-scan
+    sources:
+    - https://github.com/sefastech/clutta-helm-charts
+    type: application
+    urls:
+    - https://sefastech.github.io/clutta-helm-charts/charts/clutta-scan-0.3.11.tgz
+    version: 0.3.11
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Documentation
+          url: https://docs.clutta.io
+        - name: Clutta Cloud
+          url: https://app.clutta.io
+    apiVersion: v2
     appVersion: v0.2.12
-    created: "2026-09-24T12:00:54.646275716Z"
+    created: "2026-09-24T14:35:59.792845256Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 1b7c94a657b8831ed39242fee2120cae1273f3616a9040f25720cac65c0a11c9
@@ -35,7 +60,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.11
-    created: "2026-09-24T12:00:54.651874501Z"
+    created: "2026-09-24T14:35:59.798298236Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 9f63cf5ca87aee468dda6494316c6681b0fc4858f8527ab3ca990a9c86c09f0c
@@ -60,7 +85,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.10
-    created: "2026-09-24T12:00:54.651356632Z"
+    created: "2026-09-24T14:35:59.797863409Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: f5cdec0a708a7700880be2ae1b943190e9ffd4649e9162eedb6b4c1b50452e2a
@@ -85,7 +110,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.9
-    created: "2026-09-24T12:00:54.65085869Z"
+    created: "2026-09-24T14:35:59.797477775Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 79777d276cdb441016dbe185a7619088490d8e3f0647cf224ade91b5834366d1
@@ -110,7 +135,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.8
-    created: "2026-09-24T12:00:54.650336193Z"
+    created: "2026-09-24T14:35:59.797048269Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 5123dccfee4dd4ed149e2ac83b795baca0b92eed2aea7df4243108398309550e
@@ -135,7 +160,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.7
-    created: "2026-09-24T12:00:54.649820287Z"
+    created: "2026-09-24T14:35:59.796451795Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 194cab6e1e08fac85a53cd6b974234b89b2f04d0f57656771dac84028ee7b1b7
@@ -160,7 +185,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.6
-    created: "2026-09-24T12:00:54.648611918Z"
+    created: "2026-09-24T14:35:59.795923515Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 41db82338792600ea04e8438bc923fa58634751975609edfc4f83a58e9d3c922
@@ -185,7 +210,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.5
-    created: "2026-09-24T12:00:54.647515255Z"
+    created: "2026-09-24T14:35:59.794755608Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 0005cf9e1f2a117162e1b1ccda3a0bd2cfe2c9e98c118e139bf2ecce629068c9
@@ -210,7 +235,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.4
-    created: "2026-09-24T12:00:54.646801359Z"
+    created: "2026-09-24T14:35:59.793714167Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 9acc5eda9be231866ceb3413ab7bb2a6a0dca784ca4c969ad54755ee4b5b2055
@@ -235,7 +260,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.3
-    created: "2026-09-24T12:00:54.645734694Z"
+    created: "2026-09-24T14:35:59.792404298Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 3347c45379636a66df5f8de5d4809dff10fdceda0454b430b393415ea921fae0
@@ -260,7 +285,7 @@ entries:
           url: https://app.clutta.io
     apiVersion: v2
     appVersion: v0.2.2
-    created: "2026-09-24T12:00:54.645171981Z"
+    created: "2026-09-24T14:35:59.791996749Z"
     description: Deploy Clutta Scan across Kubernetes nodes for evidence collection
       and analysis.
     digest: 6502de6c37b1f140be25d9afe7921e2ffee7c1edd435c54a3678cdab5c25be56
@@ -278,7 +303,7 @@ entries:
     version: 0.3.0
   - apiVersion: v2
     appVersion: v0.2.1
-    created: "2026-09-24T12:00:54.644683717Z"
+    created: "2026-09-24T14:35:59.791551734Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: 38b4443ab8f793854d96e56a6eeeab66675652ed89e0b65c8d6d8c0f0bf021ee
     name: clutta-scan
@@ -288,7 +313,7 @@ entries:
     version: 0.2.1
   - apiVersion: v2
     appVersion: v0.2.0
-    created: "2026-09-24T12:00:54.644170336Z"
+    created: "2026-09-24T14:35:59.791159428Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: 4a4f5fdc9aff16b567b3652b194180fc6639f67ce089232d0344ec841a9a48a0
     name: clutta-scan
@@ -298,7 +323,7 @@ entries:
     version: 0.2.0
   - apiVersion: v2
     appVersion: v0.1.29
-    created: "2026-09-24T12:00:54.643714774Z"
+    created: "2026-09-24T14:35:59.790764409Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: 7a099f16027afebc98d96232fe3e525c6886a49d9821a4f0e8b8871d94c11f07
     name: clutta-scan
@@ -308,7 +333,7 @@ entries:
     version: 0.1.29
   - apiVersion: v2
     appVersion: v0.1.28
-    created: "2026-09-24T12:00:54.643203738Z"
+    created: "2026-09-24T14:35:59.790339867Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: ca4b113b45703486bfc948ff768d8db2645f88986ea7c080cb75d3088e700be7
     name: clutta-scan
@@ -318,7 +343,7 @@ entries:
     version: 0.1.28
   - apiVersion: v2
     appVersion: v0.1.27
-    created: "2026-09-24T12:00:54.642661773Z"
+    created: "2026-09-24T14:35:59.789877688Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: 10bde9221616a5ac5ea49e56934e8f3ba006884a207f684775b72f7a828e066e
     name: clutta-scan
@@ -328,7 +353,7 @@ entries:
     version: 0.1.27
   - apiVersion: v2
     appVersion: v0.1.26
-    created: "2026-09-24T12:00:54.642159593Z"
+    created: "2026-09-24T14:35:59.789385418Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: 3be91fc92fdae3954be44156c0649a419325517046959cd12559f8f58e2357f7
     name: clutta-scan
@@ -338,7 +363,7 @@ entries:
     version: 0.1.26
   - apiVersion: v2
     appVersion: v0.1.25
-    created: "2026-09-24T12:00:54.641579919Z"
+    created: "2026-09-24T14:35:59.766209932Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: 16d756de370df83be4ab6cf4fb7a567b2e58958701b777e6a315c531bfe28cf6
     name: clutta-scan
@@ -348,7 +373,7 @@ entries:
     version: 0.1.25
   - apiVersion: v2
     appVersion: v0.1.24
-    created: "2026-09-24T12:00:54.640237335Z"
+    created: "2026-09-24T14:35:59.765143465Z"
     description: Clutta Scan for Kubernetes evidence collection and analysis.
     digest: 75ef89ff55ec3d7b7b14c7a26ef45285ada7f89100e70a2972fddf3becd04bd4
     name: clutta-scan
@@ -358,7 +383,7 @@ entries:
     version: 0.1.24
   - apiVersion: v2
     appVersion: v0.1.23
-    created: "2026-09-24T12:00:54.639067856Z"
+    created: "2026-09-24T14:35:59.764770105Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 3a8debc3fb6623d2f41debd45266df8e344e26ce0ac2ac45e4f621500eb82a59
@@ -369,7 +394,7 @@ entries:
     version: 0.1.23
   - apiVersion: v2
     appVersion: v0.1.22
-    created: "2026-09-24T12:00:54.63870094Z"
+    created: "2026-09-24T14:35:59.764503833Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 45eab088b4b516bf9410089660ed0509a057a5981c83851f629fadc79aca00bf
@@ -380,7 +405,7 @@ entries:
     version: 0.1.22
   - apiVersion: v2
     appVersion: v0.1.21
-    created: "2026-09-24T12:00:54.638320918Z"
+    created: "2026-09-24T14:35:59.76423635Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 204ba73bd05c9efb1e9e8efad423daa64acbf7c92bc2eea0200b8233d9a5f6ae
@@ -391,7 +416,7 @@ entries:
     version: 0.1.21
   - apiVersion: v2
     appVersion: v0.1.19
-    created: "2026-09-24T12:00:54.637978588Z"
+    created: "2026-09-24T14:35:59.763958326Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: dbd537813688d8a876f47bc705e9ab3486d5a4dcf55a112b741046569b0454c8
@@ -402,7 +427,7 @@ entries:
     version: 0.1.19
   - apiVersion: v2
     appVersion: v0.1.18
-    created: "2026-09-24T12:00:54.637621069Z"
+    created: "2026-09-24T14:35:59.763695039Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 2dc871591e588ec0352512dfd05c1d12b1a278fc58e2df73119c20f2a6360347
@@ -413,7 +438,7 @@ entries:
     version: 0.1.18
   - apiVersion: v2
     appVersion: v0.1.17
-    created: "2026-09-24T12:00:54.637182679Z"
+    created: "2026-09-24T14:35:59.763418124Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: b58728924073cfff366932bddd015ade773f521a12ede54a742cfd30f861a7c6
@@ -424,7 +449,7 @@ entries:
     version: 0.1.17
   - apiVersion: v2
     appVersion: v0.1.16
-    created: "2026-09-24T12:00:54.636822154Z"
+    created: "2026-09-24T14:35:59.763134436Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: ae6666b9f7eeb59b61d60c5371a02702279cc2b5982908fed8fd0f97b9973a86
@@ -435,7 +460,7 @@ entries:
     version: 0.1.16
   - apiVersion: v2
     appVersion: v0.1.15
-    created: "2026-09-24T12:00:54.636419761Z"
+    created: "2026-09-24T14:35:59.762855009Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: ee4df498ea2f8dd7fda4ee22f041c45e73d5d66227d2f721d311d6f5ba762312
@@ -446,7 +471,7 @@ entries:
     version: 0.1.15
   - apiVersion: v2
     appVersion: v0.1.14
-    created: "2026-09-24T12:00:54.636056191Z"
+    created: "2026-09-24T14:35:59.762582519Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 07b5ae7b01fa30c4b6188569324661ce7729f4e075ca6713e95c1a21a8451311
@@ -457,7 +482,7 @@ entries:
     version: 0.1.14
   - apiVersion: v2
     appVersion: v0.1.13
-    created: "2026-09-24T12:00:54.635671992Z"
+    created: "2026-09-24T14:35:59.762300293Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 2a46ceb3283ac4d38af992d931549cdb11a5f37fae8183710596c9c5597c23d3
@@ -468,7 +493,7 @@ entries:
     version: 0.1.13
   - apiVersion: v2
     appVersion: v0.1.12
-    created: "2026-09-24T12:00:54.635226017Z"
+    created: "2026-09-24T14:35:59.761962807Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 8497008bd129cc50b773f8d03030f138ef3aba55b58121e0e4a15c3a99cded02
@@ -479,7 +504,7 @@ entries:
     version: 0.1.12
   - apiVersion: v2
     appVersion: v0.1.11
-    created: "2026-09-24T12:00:54.634837059Z"
+    created: "2026-09-24T14:35:59.761627079Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: f5d124092fbfd44447f3f06582f3c9d9ad695d5fb307df4de5a92971fe7ae9e3
@@ -490,7 +515,7 @@ entries:
     version: 0.1.11
   - apiVersion: v2
     appVersion: v0.1.10
-    created: "2026-09-24T12:00:54.634401815Z"
+    created: "2026-09-24T14:35:59.761280826Z"
     description: Clutta scan daemon. Runs on every node, watches logs and k8s state,
       fires findings to the Clutta backend.
     digest: 674a16957979dab7c7a54ad6e970a9012f980be5cea49e594cf27b2327d590a6
@@ -499,4 +524,4 @@ entries:
     urls:
     - https://sefastech.github.io/clutta-helm-charts/charts/clutta-scan-0.1.10.tgz
     version: 0.1.10
-generated: "2026-09-24T12:00:54.633920905Z"
+generated: "2026-09-24T14:35:59.760243594Z"
