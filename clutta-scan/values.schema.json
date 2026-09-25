@@ -80,7 +80,7 @@
         "enabled": {"type": "boolean"},
         "correlationField": {"type": "string"},
         "windowSeconds": {"type": "integer", "minimum": 1},
-        "mode": {"type": "string", "enum": ["local", "centre-join"]}
+        "mode": {"type": "string", "enum": ["local", "global"]}
       }
     },
     "connection": {
