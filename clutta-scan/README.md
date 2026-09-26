@@ -84,7 +84,7 @@ unknown fields and invalid modes before installation.
 | `flowDiscovery.enabled` | `true` | Learn recurring cross-service flows from collected evidence; learned flows remain review-only |
 | `flowDiscovery.correlationField` | empty | Optional field used to correlate steps; empty enables automatic selection |
 | `flowDiscovery.windowSeconds` | `60` | Maximum interval used to assemble one flow run |
-| `flowDiscovery.mode` | `local` | Assemble flow candidates locally or use `centre-join` |
+| `flowDiscovery.mode` | `local` | Assemble flow candidates locally or join evidence globally across independent sources |
 | `connection.mode` | `cloud` | `cloud` syncs evidence; `local` keeps the daemon offline |
 | `connection.proxy.httpsProxy` | empty | Optional HTTPS proxy for outbound Clutta Cloud traffic |
 | `connection.proxy.noProxy` | empty | Optional hosts that bypass the HTTPS proxy |
