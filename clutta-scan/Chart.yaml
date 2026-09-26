@@ -10,8 +10,8 @@ type: application
 # Chart releases and application releases are versioned independently.
 # version identifies this immutable chart package.
 # appVersion identifies the default sefastech/clutta-scan image.
-version: 0.3.14
-appVersion: "v0.2.15"
+version: 0.3.15
+appVersion: "v0.2.16"
 home: https://clutta.io
 icon: https://clutta.io/favicon.svg
 sources:
