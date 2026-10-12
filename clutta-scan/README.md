@@ -144,6 +144,11 @@ referenced Secret. It does not mount the complete Secret into the filesystem.
 
 ## Persistent state
 
+The chart owns the `/var/clutta` storage mount. Scan images must not declare
+an additional image volume at `/var/clutta/.clutta`: some runtimes mount that
+child independently and hide the state stored on the parent volume. The same
+pod's state must survive a container restart, even with the default `emptyDir`.
+
 State remains ephemeral by default because the chart cannot safely create its
 node-local directory with the required ownership. Ephemeral state is suitable
 for evaluations that accept evidence loss when a pod is replaced.
@@ -171,6 +176,11 @@ cannot recover an observation that was interrupted before its local queue
 append. The repository runbook at
 `docs/runbooks/validation/scan-durability.md` contains the complete failure
 matrix and executable tests.
+
+When upgrading an image with a masked state directory, preserve any recoverable
+state from the running collector before replacing it. Do not clear queues,
+holds, or installation identity to make readiness pass. Removing an implicit
+volume cannot recover evidence already discarded by an earlier restart.
 
 ## Health and coverage
 
